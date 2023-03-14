@@ -1,0 +1,140 @@
+
+
+- name: Ansible Playbook
+  hosts: nodes
+  become: true
+  tasks:
+    - name: "apt-get update"
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+
+
+- name: Install Nginx on nginx hosts
+  hosts: nginx
+  become: true
+
+  vars:
+    server: "nginx"
+
+  tasks:
+    - name: 'Install nginx'
+      apt:
+        name: ['python3','nginx']
+        state: latest
+        update_cache: True
+
+    - name: 'add index.html in nginx dir'
+      template:
+        src: '../templates/server.j2'
+        dest: /var/www/html/index.html
+        
+  handlers:
+    - name: restart-nginx
+      service:
+        name: nginx
+        state: restarted
+
+
+
+- name: Install Apache on apache hosts
+  hosts: apache
+
+  vars:
+    server: "apache"
+
+  become: true
+  tasks:
+
+    - name: 'Install apache'
+      apt:
+        name: ['python3','apache2']
+        state: latest
+        update_cache: True
+
+    - name: 'add index.html in apache dir'
+      template:
+        src: '../templates/server.j2'
+        dest: /var/www/html/index.html
+        
+
+
+      
+
+  handlers:
+    - name: restart-apache
+      service:
+        name: apache2
+        state: restarted
+    
+ 
+
+- name: Install Mysql on Mysql hosts
+  hosts: mysql
+  become: true
+  
+  tasks:
+    - name: 'Install Mysql'
+      apt:
+        name: ['bundler', 'mysql-server', 'mysql-client', 'libmysqlclient-dev', 'python3', 'python-mysqldb', 'build-essential']
+        state: present
+        update_cache: True
+  
+
+    # Update the root password immediately. This should come first as ordering
+    # is very important
+    - name: Update mysql root password for all root accounts "azerty"
+      mysql_user: name=root password="azerty" priv="*.*:ALL,GRANT"
+
+  handlers:
+    - name: restart-db
+      service:
+        name: mysql
+        state: restarted
+
+
+- name: Install Docker on docker hosts
+  hosts: docker
+  become: true
+
+  vars:
+    #container_count: The number of containers to create.
+    container_count: 1
+    #default_container_name: Default container name.
+    default_container_name: docker
+    #default_container_image: Default Docker image to be used when creating containers.
+    default_container_image: accetto/ubuntu-vnc-xfce
+    #default_container_command: Default command to run on new containers.
+    default_container_command: "sleep 1d"
+  
+  tasks:
+    - name: "Install aptitude"
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: "Install required system packages"
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+        update_cache: true
+
+    - name: "Add Docker GPG apt Key"
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: "Add Docker Repository"
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+

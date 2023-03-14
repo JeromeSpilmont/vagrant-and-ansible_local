@@ -1,0 +1,17 @@
+[nodes]
+Node01 ansible_connection=local
+Node02 ansible_connection=local
+Node03 ansible_connection=local
+Node04 ansible_connection=local
+
+[nginx]
+Node01 ansible_connection=local
+
+[apache]
+Node02 ansible_connection=local
+
+[docker]
+Node03 ansible_connection=local
+
+[mysql]
+Node04 ansible_connection=local
